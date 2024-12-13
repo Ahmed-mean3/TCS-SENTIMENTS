@@ -22,7 +22,7 @@ import {
 import { useState, useEffect } from "react";
 
 // 1. Choose an extension target
-export default reactExtension("purchase.checkout.block.render", () => (
+export default reactExtension("purchase.checkout.delivery-address.render-before", () => (
   <Extension />
 ));
 
@@ -33,6 +33,7 @@ function Extension() {
   const address = useShippingAddress();
   const cart = useCartLines();
   const applyShippingAddressChange = useApplyShippingAddressChange();
+  const applyAttribute = useApplyAttributeChange();
   const [validate, setValidate] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shopData, setShopData] = useState();
@@ -608,7 +609,7 @@ function Extension() {
 
 
   const handleCityChange = async (_city = "") => {
-    // console.log("handleCityChange", _city);
+    console.log("handleCityChange", _city);
     // const matchedCity = userCities.find(
     //   (city) => city.value === _city && city.value !== "769"
     // );
@@ -628,13 +629,17 @@ function Extension() {
 
     // }
   };
-
+  const startTimer = () => {
+    setTimeout(() => {
+      setValidate(false);
+    }, 10000); // Timer duration in 5
+  };
   const handleCountryChange = async (code = "") => {
     // let check = false;
     // if (code) {
     //   check = isCityInPakistan(code)
     // }
-    // console.log('code check', code)
+    console.log('code check', code)
     if (code) {
       await applyShippingAddressChange({
         type: "updateShippingAddress",
@@ -643,49 +648,26 @@ function Extension() {
         },
       });
     }
-
+    startTimer();
     // }
+  };
+  const handleSetCountryChange = async (code = "") => {
+    await applyAttribute({
+      type: "updateAttribute",
+      key: "Delivery Country",
+      value: "Pakistan"
+    });
   };
 
   useBuyerJourneyIntercept(async ({ canBlockProgress }) => {
-    // console.log('checking', !(findKeyValue(attribute, 'Delivery Date').exists))
-    if (!(findKeyValue(attribute, 'Order Note').exists)) {
-      setValidate(true)
+    if (validate) {
       return {
         behavior: "block",
-        reason: "Empty notes",
+        reason: "Country code mismatch",
         errors: [
           {
-            message: "Notes have not filled at cart page, please go back & fill it.",
-            target: "$.purchase.checkout.block.render",
-          },
-        ],
-      };
-    }
-    if (!(findKeyValue(attribute, 'Delivery Date').exists)) {
-      setValidate(true)
-
-      return {
-        behavior: "block",
-        reason: "Empty Delivery Date",
-        errors: [
-          {
-            message: "Delivery Date has not filled at cart page, please go back & fill it.",
-            target: "$.purchase.checkout.block.render",
-          },
-        ],
-      };
-    }
-    if (!(findKeyValue(attribute, 'Delivery Location').exists)) {
-      setValidate(true)
-
-      return {
-        behavior: "block",
-        reason: "Empty Delivery Location",
-        errors: [
-          {
-            message: "Delivery Location has not filled at cart page, please go back & fill it.",
-            target: "$.purchase.checkout.block.render",
+            message: "Country selected at cart page cannot be changed at checkout",
+            target: "$.cart.deliveryGroups[0].deliveryAddress.countryCode",
           },
         ],
       };
@@ -694,58 +676,40 @@ function Extension() {
     return { behavior: "allow" };
   });
 
+
   useEffect(() => {
-    setIsLoading(true);
-    api
-      .query(
-        `{
-  shop{
-    name
-    primaryDomain{
-      host
-      url
+    // if (address.countryCode !== "PK") {
+    let countryCode = "PK";
+    if (!!countryList[findKeyValue(attribute, 'Delivery Country').keyValue?.value]) {
+      countryCode = countryCodeMap[findKeyValue(attribute, 'Delivery Country').keyValue?.value];
     }
-  }
-}`,
-        {
-          variables: { first: 100 },
-        }
-      )
-      .then(({ data, errors }) => {
-        // setLoading(true);
+    else {
+      handleSetCountryChange()
+    }
 
-        setShopData(data?.shop?.primaryDomain?.host);
-        if (errors) {
-          setIsLoading(false);
-        }
-      })
-      .catch((error) => {
-        setIsLoading(false);
-        console.log("error fetching shop name", error);
-      });
-  }, [api.query]);
+    // console.log('countryCode->>>', countryCode, 'address.countryCode->>>', address.countryCode, !validate)
 
-  // useEffect(() => {
-  //   // if (address.countryCode !== "PK") {
-  //   let countryCode = "PK";
-  //   if (!!countryList[findKeyValue(attribute, 'Delivery Country').keyValue?.value]) {
-  //     countryCode = countryCodeMap[findKeyValue(attribute, 'Delivery Country').keyValue?.value];
-  //   }
-  //   handleCountryChange(countryCode)
-  //   // }
-  //   const cartCity = findKeyValue(attribute, 'Delivery Location').keyValue?.value
-  //   // console.log('cartCity->>>', cartCity, 'cartCity->>>', address.city)
+    if (!validate && countryCode !== address.countryCode) {
+      setValidate(true)
+    }
+    // else {
+    //   setValidate(false)
+    // }
 
-  //   if (address.countryCode === "PK" && (address.city !== cartCity || address.city === "" || address.city === undefined || address.city === null)) {
-  //     // console.log(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
-  //     handleCityChange(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
-  //   }
-  // }, [address.countryCode, address.city])
+    handleCountryChange(countryCode)
+    // }
+    const cartCity = findKeyValue(attribute, 'Delivery Location').keyValue?.value
+    // console.log('cartCity->>>', cartCity, 'cartCity->>>', address.city)
+
+    if (address.countryCode === "PK" && (address.city !== cartCity || address.city === "" || address.city === undefined || address.city === null)) {
+      console.log(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
+      handleCityChange(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
+    }
+  }, [address.countryCode, address.city, validate])
 
   return (
     <BlockStack border={"none"}>
-      {shopData && validate && <Button to={`https://${shopData}/cart`} appearance="warning" kind="secondary" inlineAlignment="center">Go back</Button>}
-      {/* <Button>jdjd</Button> */}
+
     </BlockStack>
   );
 
