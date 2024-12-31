@@ -35,6 +35,7 @@ function Extension() {
   const applyShippingAddressChange = useApplyShippingAddressChange();
   const applyAttribute = useApplyAttributeChange();
   const [validate, setValidate] = useState(false);
+  const [validateCity, setValidateCity] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shopData, setShopData] = useState();
   // console.log('attribute data->>>', attribute)
@@ -625,6 +626,7 @@ function Extension() {
           city: _city,
         },
       });
+
     }
 
     // }
@@ -632,6 +634,11 @@ function Extension() {
   const startTimer = () => {
     setTimeout(() => {
       setValidate(false);
+    }, 10000); // Timer duration in 5
+  };
+  const startTimerCity = () => {
+    setTimeout(() => {
+      setValidateCity(false);
     }, 10000); // Timer duration in 5
   };
   const handleCountryChange = async (code = "") => {
@@ -672,6 +679,18 @@ function Extension() {
         ],
       };
     }
+    if (validateCity) {
+      return {
+        behavior: "block",
+        reason: "City mismatch",
+        errors: [
+          {
+            message: "City selected at cart page cannot be changed at checkout",
+            target: "$.cart.deliveryGroups[0].deliveryAddress.city",
+          },
+        ],
+      };
+    }
     // Default allow
     return { behavior: "allow" };
   });
@@ -702,7 +721,9 @@ function Extension() {
     // console.log('cartCity->>>', cartCity, 'cartCity->>>', address.city)
 
     if (address.countryCode === "PK" && (address.city !== cartCity || address.city === "" || address.city === undefined || address.city === null)) {
-      console.log(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
+      // console.log(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
+      setValidateCity(true);
+      startTimerCity();
       handleCityChange(findKeyValue(attribute, 'Delivery Location').keyValue?.value)
     }
   }, [address.countryCode, address.city, validate])

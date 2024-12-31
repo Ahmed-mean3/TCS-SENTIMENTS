@@ -3,7 +3,7 @@
 client_id = "533acc3593d02e2a88fa17dd6d3c2abe"
 name = "ella-checkout-functionality"
 handle = "ella-checkout-functionality-1"
-application_url = "https://airfare-tcp-actor-accomplished.trycloudflare.com"
+application_url = "https://gasoline-bald-livecam-cornell.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = ""
 
 [auth]
 redirect_urls = [
-  "https://airfare-tcp-actor-accomplished.trycloudflare.com/auth/callback",
-  "https://airfare-tcp-actor-accomplished.trycloudflare.com/auth/shopify/callback",
-  "https://airfare-tcp-actor-accomplished.trycloudflare.com/api/auth/callback"
+  "https://gasoline-bald-livecam-cornell.trycloudflare.com/auth/callback",
+  "https://gasoline-bald-livecam-cornell.trycloudflare.com/auth/shopify/callback",
+  "https://gasoline-bald-livecam-cornell.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

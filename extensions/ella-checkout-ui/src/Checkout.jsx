@@ -676,7 +676,7 @@ function Extension() {
         ],
       };
     }
-    if (!(findKeyValue(attribute, 'Delivery Location').exists)) {
+    if (!(findKeyValue(attribute, 'Delivery Country').exists)) {
       setValidate(true)
 
       return {
@@ -684,7 +684,7 @@ function Extension() {
         reason: "Empty Delivery Location",
         errors: [
           {
-            message: "Delivery Location has not filled at cart page, please go back & fill it.",
+            message: "Delivery Location has not filled at cart page, please go back & reselect country.",
             target: "$.purchase.checkout.block.render",
           },
         ],
